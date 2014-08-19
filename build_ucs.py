@@ -35,15 +35,6 @@ invoking_user = getpass.getuser()
 desc_string = "Created via Python by " + invoking_user + " - " + timestamp_str
 print desc_string
 
-config_file = "ucs_config-2xESX.json"
-ucsm_ip = ""
-ucsm_user = ""
-ucsm_pass = ""
-
-# vlan_list = {"422": "vlan422", "423": "vlan423", "424": "vlan424"}
-# vlan_list = {"727": "vlan727", "728": "vlan728", "729": "vlan729"}
-
-##SPTemplates = SPTemplateConfig()
 #try:
 myopts, args = getopt.getopt(sys.argv[1:], "c:i:u:p:", ["config_file=","ip=","user=","pw="])
 #except getopt.GetoptError:
@@ -60,26 +51,11 @@ for o, a in myopts:
     else:
         print("Usage: %s --ip <ip> --user <user_name> --pw <password> --config_file <config_file>" % sys.argv[0])
 
-# handle = UcsHandle()
-
-
-
 json_config_data = open(config_file)
 SPTemplates = json.load(json_config_data)
 
-# def ucs_login():
-# handle.Login("172.16.82.202", "admin", "admin")
-# handle.Login("172.16.82.140", "admin", "admin")
-# handle.Login("172.16.16.100", "admin", "admin")
-# handle.Login("172.16.16.100", "admin", "admin", dump_xml=True)
-
-# ucs_login()
+# Login to UCSM
 handle = login.ucs_login(ucsm_ip, ucsm_user, ucsm_pass)
-#handle = login.ucs_login("172.16.16.100", "admin", "admin")
-#handle = login.ucs_login("172.26.16.55", "admin", "c1sco123")
-
-# handle.Login("172.16.16.100", "admin", "admin")
-
 
 def add_to_remove_script(fh, Dn, class_string):
     fh.write(utilities.get_remove_dn_string(Dn, class_string))
@@ -89,16 +65,6 @@ def add_to_remove_script(fh, Dn, class_string):
 # for vlan_id,vlan_name in sorted(vlan_list.items()):
     # print "Creating VLAN %s with ID %s" % (vlan_name,vlan_id)
     # vlan.create_vlan(handle, vlan_id, vlan_name)
-
-# Create MAC Pools
-# for pool_name,pool_range in sorted(mac_pool_list.items()):
-    # print "Creating MAC pool %s with range %s" % (pool_name,pool_range)
-    # mac_pool.create_mac_pool(handle, pool_name, pool_range)
-
-# Create vNIC templates
-
-
-#handle.StartTransaction()
 
 obj = handle.GetManagedObject(None,OrgOrg.ClassId(),{OrgOrg.DN:"org-root"})
 
