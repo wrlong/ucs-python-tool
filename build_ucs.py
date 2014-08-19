@@ -1,0 +1,353 @@
+#!/usr/bin/python
+
+import simplejson as json
+import time
+import datetime
+import sys
+import getopt
+import getpass
+from UcsSdk import *
+from modules.fabric import vlan
+from modules.pool import mac_pool
+from modules.pool import uuid_pool
+from modules.pool import server_pool
+from modules.pool import wwnn_pool
+from modules.pool import wwpn_pool
+from modules.template import vnic_template
+from modules.template import vhba_template
+from modules.template import sp_template
+from modules.policy import qos_policy
+from modules.policy import firmware_policy
+from modules.policy import maintenance_policy
+from modules.policy import boot_lan_policy
+from modules.policy import boot_san_policy
+from modules.utilities import utilities
+from modules.utilities import login
+from ucs_config import *
+
+ts = time.time()
+timestamp_str = \
+    datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d-%H-%M-%S')
+remove_script_file = "remove_script_" + timestamp_str
+file_out = open(remove_script_file, 'w')
+
+invoking_user = getpass.getuser()
+desc_string = "Created via Python by " + invoking_user + " - " + timestamp_str
+print desc_string
+
+config_file = "ucs_config-2xESX.json"
+ucsm_ip = ""
+ucsm_user = ""
+ucsm_pass = ""
+
+# vlan_list = {"422": "vlan422", "423": "vlan423", "424": "vlan424"}
+# vlan_list = {"727": "vlan727", "728": "vlan728", "729": "vlan729"}
+
+##SPTemplates = SPTemplateConfig()
+#try:
+myopts, args = getopt.getopt(sys.argv[1:], "c:i:u:p:", ["config_file=","ip=","user=","pw="])
+#except getopt.GetoptError:
+#    print("Usage: %s --ip <ip> --user <user_name> --pw <password> --config_file <config_file>" % sys.argv[0])
+for o, a in myopts:
+    if o in ("-i", "--ip"):
+        ucsm_ip = a
+    elif o in ("-u", "--user"):
+        ucsm_user = a
+    elif o in ("-p", "--pw"):
+        ucsm_pass = a
+    elif o in ("-c", "--config_file"):
+        config_file = a
+    else:
+        print("Usage: %s --ip <ip> --user <user_name> --pw <password> --config_file <config_file>" % sys.argv[0])
+
+# handle = UcsHandle()
+
+
+
+json_config_data = open(config_file)
+SPTemplates = json.load(json_config_data)
+
+# def ucs_login():
+# handle.Login("172.16.82.202", "admin", "admin")
+# handle.Login("172.16.82.140", "admin", "admin")
+# handle.Login("172.16.16.100", "admin", "admin")
+# handle.Login("172.16.16.100", "admin", "admin", dump_xml=True)
+
+# ucs_login()
+handle = login.ucs_login(ucsm_ip, ucsm_user, ucsm_pass)
+#handle = login.ucs_login("172.16.16.100", "admin", "admin")
+#handle = login.ucs_login("172.26.16.55", "admin", "c1sco123")
+
+# handle.Login("172.16.16.100", "admin", "admin")
+
+
+def add_to_remove_script(fh, Dn, class_string):
+    fh.write(utilities.get_remove_dn_string(Dn, class_string))
+
+
+# Create VLANs
+# for vlan_id,vlan_name in sorted(vlan_list.items()):
+    # print "Creating VLAN %s with ID %s" % (vlan_name,vlan_id)
+    # vlan.create_vlan(handle, vlan_id, vlan_name)
+
+# Create MAC Pools
+# for pool_name,pool_range in sorted(mac_pool_list.items()):
+    # print "Creating MAC pool %s with range %s" % (pool_name,pool_range)
+    # mac_pool.create_mac_pool(handle, pool_name, pool_range)
+
+# Create vNIC templates
+
+
+#handle.StartTransaction()
+
+obj = handle.GetManagedObject(None,OrgOrg.ClassId(),{OrgOrg.DN:"org-root"})
+
+#if __name__ == '__main__':
+
+for spt in SPTemplates.keys():
+    # Collect pools policies and templates
+
+    handle.StartTransaction()
+
+    spt_policies = SPTemplates[spt]['policies']
+    spt_pools = SPTemplates[spt]['pools']
+    spt_templates = SPTemplates[spt]['templates']
+    sp_instances = SPTemplates[spt]['service_profiles']
+
+    # Create vnic templates and mac pools, network policies, etc.
+    spt_vnic_templates = spt_templates['vnic']
+
+    for vnic in spt_vnic_templates.keys():
+        mac_pool_name = spt_vnic_templates[vnic]['macpool']['name']
+        mac_pool_range = spt_vnic_templates[vnic]['macpool']['range']
+        mac_pool.create_mac_pool(
+            handle,
+            obj,
+            desc_string,
+            mac_pool_name,
+            mac_pool_range)
+        add_to_remove_script(
+            file_out,
+            "org-root/mac-pool-"+mac_pool_name,
+            "MacpoolPool")
+        qos_policy.create_qos_policy(
+            handle,
+            obj,
+            desc_string,
+            spt_vnic_templates[vnic]['qos_policy']['name'],
+            "bronze",
+            "line-rate",
+            "10240",
+            "none")
+        add_to_remove_script(
+            file_out,
+            "org-root/ep-qos-"+spt_vnic_templates[vnic]['qos_policy']['name'],
+            "EpqosDefinition")
+        vnic_template.create_vnic_template(
+            handle,
+            obj,
+            desc_string,
+            vnic,
+            spt_vnic_templates[vnic]['macpool']['name'],
+            #vnic,
+            spt_vnic_templates[vnic]['vlans'],
+            spt_vnic_templates[vnic]['template_type'],
+            spt_vnic_templates[vnic]['mtu'],
+            spt_vnic_templates[vnic]['qos_policy']['name'],
+            spt_vnic_templates[vnic]['switch_id'],
+            spt_vnic_templates[vnic]['network_policy'])
+        add_to_remove_script(
+            file_out,
+            "org-root/lan-conn-templ-"+vnic,
+            "VnicLanConnTempl")
+
+    # Create vhba templates and wwpn pools
+    spt_vhba_templates = spt_templates['vhba']
+
+    for vhba in spt_vhba_templates.keys():
+        wwpn_pool.create_wwpn_pool(
+            handle,
+            obj,
+            desc_string,
+            spt_vhba_templates[vhba]['wwpnpool']['name'],
+            spt_vhba_templates[vhba]['wwpnpool']['range'])
+        add_to_remove_script(
+            file_out,
+            "org-root/wwn-pool-"+spt_vhba_templates[vhba]['wwpnpool']['name'],
+            "FcpoolInitiators")
+        vhba_template.create_vhba_template(
+            handle,
+            obj,
+            desc_string,
+            vhba,
+            spt_vhba_templates[vhba]['wwpnpool']['name'],
+            #vhba,
+            spt_vhba_templates[vhba]['vsans'],
+            spt_vhba_templates[vhba]['template_type'],
+            spt_vhba_templates[vhba]['switch_id'])
+        add_to_remove_script(file_out,
+                             "org-root/san-conn-templ-"+vhba,
+                             "VnicSanConnTempl")
+
+    # handle.CompleteTransaction()
+
+    # Create UUID pool
+    uuid_pool.create_uuid_pool(handle,
+                               obj,
+                               desc_string,
+                               spt_pools['uuid']['name'],
+                               spt_pools['uuid']['range'])
+    add_to_remove_script(file_out,
+                         "org-root/uuid-pool-"+spt_pools['uuid']['name'],
+                         "UuidpoolPool")
+
+    # Create WWNN pool
+    wwnn_pool.create_wwnn_pool(handle,
+                               obj,
+                               desc_string,
+                               spt_pools['wwnn']['name'],
+                               spt_pools['wwnn']['range'])
+    add_to_remove_script(file_out,
+                         "org-root/wwn-pool-"+spt_pools['wwnn']['name'],
+                         "FcpoolInitiators")
+
+    # Create server pool
+    server_pool.create_server_pool(handle,
+                                   obj,
+                                   desc_string,
+                                   spt_pools['server']['name'],
+                                   spt_pools['server']['range'])
+    add_to_remove_script(file_out,
+                         "org-root/compute-pool-"+spt_pools['server']['name'],
+                         "ComputePool")
+
+    # Create firmware policy
+    firmware_policy.create_fw_policy(handle,
+                                     obj,
+                                     desc_string,
+                                     spt_policies['firmware']['name'])
+    add_to_remove_script(
+        file_out,
+        "org-root/fw-host-pack-"+spt_policies['firmware']['name'],
+        "FirmwareComputeHostPack")
+
+    # Create maintenance policy
+    '''
+    maintenance_policy.create_maintenance_policy(
+        handle,
+        spt_policies['maintenance']['name'])
+    add_to_remove_script(
+        file_out,
+        "org-root/maint-"+spt_policies['maintenance']['name'],
+        "LsmaintMaintPolicy")
+    '''
+
+    # Create boot policy
+    '''
+    boot_lan_policy.create_lan_boot_policy(
+        handle,
+        spt_policies['boot']['name'],
+        spt_policies['boot']['vnic'])
+    add_to_remove_script(
+        file_out,
+        "org-root/boot-policy-"+spt_policies['boot']['name'],
+        "LsbootPolicy")
+    '''
+
+    # Create boot policy
+
+    boot_san_policy.create_boot_san_policy(
+        handle,
+        obj,
+        desc_string,
+        spt_policies['boot']['name'],
+        spt_policies['boot']['paths']['vhba_primary']['name'],
+        spt_policies['boot']['paths']['vhba_primary']['target_primary'],
+        spt_policies['boot']['paths']['vhba_secondary']['name'],
+        spt_policies['boot']['paths']['vhba_secondary']['target_primary'])
+    add_to_remove_script(
+        file_out,
+        "org-root/boot-policy-"+spt_policies['boot']['name'],
+        "LsbootPolicy")
+
+
+    # Create Service Profile template
+    sp_template.create_sp_template(
+        handle,
+        obj,
+        desc_string,
+        remove_script_file,
+        spt,
+        spt_policies['boot']['name'],
+        spt_pools['uuid']['name'],
+        spt_pools['wwnn']['name'],
+        spt_vnic_templates,
+        spt_vhba_templates,
+        spt_pools['server']['name'],
+        spt_policies['firmware']['name'],
+        spt_policies['maintenance']['name'])
+    add_to_remove_script(
+        file_out,
+        "org-root/ls-"+spt,
+        "LsServer")
+
+    handle.CompleteTransaction()
+    handle.StartTransaction()
+
+    # Create Service Profile instances
+    #handle.LsInstantiateNTemplate(
+    #    "org-root/ls-"+spt,
+    #    sp_instances['instances'],
+    #    sp_instances['prefix'],
+    #    "org-root",
+    #    False)
+
+    #obj = handle.GetManagedObject(None,OrgOrg.ClassId(),{OrgOrg.DN:"org-root"})
+
+    cur_instance = 1
+    while cur_instance <= int(sp_instances['instances']):
+    #    mo = handle.AddManagedObject(
+    #        obj,
+    #        desc_string,
+    #        LsServer.ClassId(),
+    #        {LsServer.SRC_TEMPL_NAME: "org-root/ls-" + spt,
+    #         LsServer.NAME: sp_instances['prefix'] + str(cur_instance)})
+    ##    add_to_remove_script(
+    #        file_out,
+    #        "org-root/ls-"+sp_instances['prefix']+str(cur_instance),
+    ##        "LsServer")
+        cur_instance += 1
+
+
+    handle.CompleteTransaction()
+
+
+    # Create boot policy
+    '''
+    boot_san_policy.create_boot_san_policy(
+        handle,
+        spt_vhba_templates[vnic]['qos_policy']['name'],
+        "bronze",
+        "line-rate",
+        "10240",
+        "none")
+    '''
+
+    # spt_uuid_pools = spt_pools['uuid']
+    '''
+    firmware.create_fw_package(
+        handle,
+        spt_pools['uuid']['name'],
+        spt_pools['uuid']['range'])
+    '''
+
+#handle.CompleteTransaction()
+
+# Logout to clean up
+handle.Logout()
+
+t_now = time.time()
+
+print ""
+print("Completed in %.2f seconds" % round((t_now-ts), 2))
+print "Remove script created is", remove_script_file

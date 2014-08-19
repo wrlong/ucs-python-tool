@@ -1,0 +1,197 @@
+{
+    "Inv-ESX-c1_spt": {
+        "policies": {
+            "bios": {
+                "name": "bios_def"
+            },
+            "boot": {
+                "type": "BFS",
+                "name": "ESXc1_BFS",
+                "paths": {
+                    "vhba_primary": {
+                        "name": "ESXc1_fc0a",
+                        "target_primary": "21:00:00:24:ff:58:02:38",
+                        "target_secondary": "21:00:00:24:ff:58:02:39"
+                    },
+                    "vhba_secondary": {
+                        "name": "ESXc1_fc1b",
+                        "target_primary": "21:00:00:24:ff:58:02:39",
+                        "target_secondary": "21:00:00:24:ff:58:02:38"
+                    }
+                }
+            },
+            "firmware": {
+                "name": "ESXc1_fw_pkg"
+            },
+            "local_disk_config": "default",
+            "maintenance": {
+                "name": "ESXc1_maint_pol"
+            },
+            "power_ctrl": "default",
+            "server_pool_qual": {
+                "name": "ESXc1_svr_qual",
+                "range": {
+                    "chassis": "1,2,3,4",
+                    "slots": "1,2"
+                }
+            }
+        },
+        "pools": {
+            "server": {
+                "name": "ESXc1_svr_pool",
+                "range": {
+                    "chassis": "3",
+                    "slots": "1,2,3,4"
+                }
+            },
+            "uuid": {
+                "name": "ESXc1_uuid",
+                "range": "0000-0025B5001101=0000-0025B50011FF"
+            },
+            "wwnn": {
+                "name": "ESXc1_wwnn",
+                "range": "20:00:00:25:B5:00:11:01-20:00:00:25:B5:00:11:FF"
+            }
+        },
+        "service_profiles": {
+            "instances": "4",
+            "prefix": "Inv-ESX-c1-"
+        },
+        "templates": {
+            "vhba": {
+                "ESXc1_fc0a": {
+                    "switch_id": "A",
+                    "template_type": "updating-template",
+                    "vsans": [
+                        "vsan100"
+                    ],
+                    "wwpnpool": {
+                        "name": "ESXc1_wwpn_vhbaA",
+                        "range": "20:00:00:25:B5:A0:11:01-20:00:00:25:B5:A0:11:FF"
+                    }
+                },
+                "ESXc1_fc1b": {
+                    "switch_id": "B",
+                    "template_type": "updating-template",
+                    "vsans": [
+                        "vsan200"
+                    ],
+                    "wwpnpool": {
+                        "name": "ESXc1_wwpn_vhbaB",
+                        "range": "20:00:00:25:B5:B0:11:01-20:00:00:25:B5:B0:11:FF"
+                    }
+                }
+            },
+            "vnic": {
+                "ESXc1_mgt_vmnic0": {
+                    "macpool": {
+                        "name": "ESXc1_vmnic0_mac",
+                        "range": "00:25:B5:A0:11:01-00:25:B5:A0:11:FF"
+                    },
+                    "mtu": "1500",
+                    "network_policy": "default",
+                    "qos_policy": {
+                        "name": "ESXc1_mgt0_qos",
+                        "rate": "line-rate"
+                    },
+                    "switch_id": "A",
+                    "template_type": "updating-template",
+                    "vlans": [
+                        "vlan727",
+                        "vlan729"
+                    ]
+                },
+                "ESXc1_mgt_vmnic1": {
+                    "macpool": {
+                        "name": "ESXc1_vmnic1_mac",
+                        "range": "00:25:B5:B0:11:01-00:25:B5:B0:11:FF"
+                    },
+                    "mtu": "1500",
+                    "network_policy": "default",
+                    "qos_policy": {
+                        "name": "ESXc1_mgt1_qos",
+                        "rate": "line-rate"
+                    },
+                    "switch_id": "B",
+                    "template_type": "updating-template",
+                    "vlans": [
+                        "vlan727",
+                        "vlan729"
+                    ]
+                },
+                "ESXc1_stg_vmnic2": {
+                    "macpool": {
+                        "name": "ESXc1_vmnic2_mac",
+                        "range": "00:25:B5:A0:12:01-00:25:B5:A0:12:FF"
+                    },
+                    "mtu": "9000",
+                    "network_policy": "default",
+                    "qos_policy": {
+                        "name": "ESXc1_stg0_qos",
+                        "rate": "line-rate"
+                    },
+                    "switch_id": "A",
+                    "template_type": "updating-template",
+                    "vlans": [
+                        "vlan515"
+                    ]
+                },
+                "ESXc1_stg_vmnic3": {
+                    "macpool": {
+                        "name": "ESXc1_vmnic3_mac",
+                        "range": "00:25:B5:B0:12:01-00:25:B5:B0:12:FF"
+                    },
+                    "mtu": "9000",
+                    "network_policy": "default",
+                    "qos_policy": {
+                        "name": "ESXc1_stg1_qos",
+                        "rate": "line-rate"
+                    },
+                    "switch_id": "B",
+                    "template_type": "updating-template",
+                    "vlans": [
+                        "vlan515"
+                    ]
+                },
+                "ESXc1_vm_vmnic4": {
+                    "macpool": {
+                        "name": "ESXc1_vmnic4_mac",
+                        "range": "00:25:B5:A0:13:01-00:25:B5:A0:13:FF"
+                    },
+                    "mtu": "9000",
+                    "network_policy": "default",
+                    "qos_policy": {
+                        "name": "ESXc1_vm0_qos",
+                        "rate": "line-rate"
+                    },
+                    "switch_id": "A",
+                    "template_type": "updating-template",
+                    "vlans": [
+                        "vlan145",
+                        "vlan146",
+                        "vlan147"
+                    ]
+                },
+                "ESXc1_vm_vmnic5": {
+                    "macpool": {
+                        "name": "ESXc1_vmnic5_mac",
+                        "range": "00:25:B5:B0:13:01-00:25:B5:B0:13:FF"
+                    },
+                    "mtu": "9000",
+                    "network_policy": "default",
+                    "qos_policy": {
+                        "name": "ESXc1_vm1_qos",
+                        "rate": "line-rate"
+                    },
+                    "switch_id": "B",
+                    "template_type": "updating-template",
+                    "vlans": [
+                        "vlan145",
+                        "vlan146",
+                        "vlan147"
+                    ]
+                }
+            }
+        }
+    }
+}
