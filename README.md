@@ -12,12 +12,12 @@ It modularizes key functions for the UCS Python SDK, supporting configuration vi
 
 ### Usage
 #### To build:
+build_ucs.py -i `ip` -u `user` -p `password` -c `json config file`
 ```bash
-build_ucs.py -i <ip> -u <user> -p <password> -c <json config file>
 $ build_ucs.py -i 192.168.10.10 -u admin -p cisco123 -c ucs_config-2xESX.json 
 ```
 #### To remove:
-remove_ucs.py -i <ip> -u <user> -p <password> -r <previous generated remove file>
+remove_ucs.py -i `ip` -u `user` -p `password` -r `previous generated remove file`
 ```bash
 $ remove_ucs.py -i 192.168.10.10 -u admin -p cisco123 -r remove_script_with_timestamp
 ```
