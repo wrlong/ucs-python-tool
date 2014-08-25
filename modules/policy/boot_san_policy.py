@@ -16,76 +16,72 @@ def create_boot_san_policy(
     target_a_vhba_a,
     vhba_b_name,
     target_b_vhba_b):
-    #policy_desc = "Created by Python"
 
-    # handle.StartTransaction()
+    try:
+        mo = handle.AddManagedObject(
+            obj,
+            LsbootPolicy.ClassId(),
+            {LsbootPolicy.POLICY_OWNER: "local",
+             LsbootPolicy.REBOOT_ON_UPDATE: "no",
+             LsbootPolicy.NAME: policy_name,
+             LsbootPolicy.ENFORCE_VNIC_NAME: "yes",
+             LsbootPolicy.DN: "org-root/boot-policy-" + policy_name,
+             LsbootPolicy.DESCR: policy_desc})
 
-    #obj = handle.GetManagedObject(
-    #    None,
-    #    OrgOrg.ClassId(),
-    #    {OrgOrg.DN: "org-root"})
+        mo_1 = handle.AddManagedObject(
+            mo,
+            LsbootVirtualMedia.ClassId(),
+            {LsbootVirtualMedia.DN: "org-root/boot-policy-" + \
+                                    policy_name + "/read-only-vm",
+             LsbootVirtualMedia.ACCESS: "read-only",
+             LsbootVirtualMedia.ORDER: "1"})
 
-    mo = handle.AddManagedObject(
-        obj,
-        LsbootPolicy.ClassId(),
-        {LsbootPolicy.POLICY_OWNER: "local",
-         LsbootPolicy.REBOOT_ON_UPDATE: "no",
-         LsbootPolicy.NAME: policy_name,
-         LsbootPolicy.ENFORCE_VNIC_NAME: "yes",
-         LsbootPolicy.DN: "org-root/boot-policy-" + policy_name,
-         LsbootPolicy.DESCR: policy_desc})
+        mo_2 = handle.AddManagedObject(
+            mo,
+            LsbootStorage.ClassId(),
+            {LsbootStorage.DN: "org-root/boot-policy-" + \
+                               policy_name + "/storage",
+             LsbootStorage.ORDER: "2"},
+            True)
 
-    mo_1 = handle.AddManagedObject(
-        mo,
-        LsbootVirtualMedia.ClassId(),
-        {LsbootVirtualMedia.DN: "org-root/boot-policy-" + policy_name +
-                                "/read-only-vm",
-         LsbootVirtualMedia.ACCESS: "read-only",
-         LsbootVirtualMedia.ORDER: "1"})
+        mo_2_1 = handle.AddManagedObject(
+            mo_2,
+            LsbootSanImage.ClassId(),
+            {LsbootSanImage.VNIC_NAME: vhba_a_name,
+             LsbootSanImage.DN: "org-root/boot-policy-" + \
+                                policy_name + "/storage/san-primary",
+             LsbootSanImage.TYPE: "primary"})
 
-    mo_2 = handle.AddManagedObject(
-        mo,
-        LsbootStorage.ClassId(),
-        {LsbootStorage.DN: "org-root/boot-policy-" + policy_name +
-                           "/storage",
-         LsbootStorage.ORDER: "2"},
-        True)
+        mo_2_1_1 = handle.AddManagedObject(
+            mo_2_1,
+            LsbootSanImagePath.ClassId(),
+            {LsbootSanImagePath.TYPE: "primary",
+             LsbootSanImagePath.DN: "org-root/boot-policy-" + \
+                                    policy_name + \
+                                    "/storage/san-primary/path-primary",
+             LsbootSanImagePath.LUN: "0",
+             LsbootSanImagePath.WWN: target_a_vhba_a})
 
-    mo_2_1 = handle.AddManagedObject(
-        mo_2,
-        LsbootSanImage.ClassId(),
-        {LsbootSanImage.VNIC_NAME: vhba_a_name,
-         LsbootSanImage.DN: "org-root/boot-policy-" + policy_name +
-                            "/storage/san-primary",
-         LsbootSanImage.TYPE: "primary"})
+        mo_2_2 = handle.AddManagedObject(
+            mo_2,
+            LsbootSanImage.ClassId(),
+            {LsbootSanImage.VNIC_NAME: vhba_b_name,
+             LsbootSanImage.DN: "org-root/boot-policy-" + \
+                                policy_name + "/storage/san-secondary",
+             LsbootSanImage.TYPE: "secondary"})
 
-    mo_2_1_1 = handle.AddManagedObject(
-        mo_2_1,
-        LsbootSanImagePath.ClassId(),
-        {LsbootSanImagePath.TYPE: "primary",
-         LsbootSanImagePath.DN: "org-root/boot-policy-" + policy_name +
-                                "/storage/san-primary/path-primary",
-         LsbootSanImagePath.LUN: "0",
-         LsbootSanImagePath.WWN: target_a_vhba_a})
+        mo_2_2_1 = handle.AddManagedObject(
+            mo_2_2,
+            LsbootSanImagePath.ClassId(),
+            {LsbootSanImagePath.TYPE: "primary",
+             LsbootSanImagePath.DN: "org-root/boot-policy-" + \
+                                    policy_name + \
+                                    "/storage/san-secondary/path-primary",
+             LsbootSanImagePath.LUN: "0",
+             LsbootSanImagePath.WWN: target_b_vhba_b})
 
-    mo_2_2 = handle.AddManagedObject(
-        mo_2,
-        LsbootSanImage.ClassId(),
-        {LsbootSanImage.VNIC_NAME: vhba_b_name,
-         LsbootSanImage.DN: "org-root/boot-policy-" + policy_name +
-                            "/storage/san-secondary",
-         LsbootSanImage.TYPE: "secondary"})
+        print "Created Boot from SAN Policy " + policy_name + \
+              " with primary target " + target_a_vhba_a
 
-    mo_2_2_1 = handle.AddManagedObject(
-        mo_2_2,
-        LsbootSanImagePath.ClassId(),
-        {LsbootSanImagePath.TYPE: "primary",
-         LsbootSanImagePath.DN: "org-root/boot-policy-" + policy_name +
-                                "/storage/san-secondary/path-primary",
-         LsbootSanImagePath.LUN: "0",
-         LsbootSanImagePath.WWN: target_b_vhba_b})
-
-    # handle.CompleteTransaction()
-
-    print "Created Boot from SAN Policy " + policy_name + \
-          " with primary target " + target_a_vhba_a
+    except CreateBootFromSanPolicyError:
+        print("Error: Unable to create boot from SAN policy " + policy_name)
