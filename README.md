@@ -11,8 +11,13 @@ It modularizes key functions for the UCS Python SDK, supporting configuration vi
 - remove_ucs.py - Takes a previously auto-generated time-stamped removal script to remove all configuration completed by a previous build_ucs.py run.
 
 ### Usage
+#### To build:
 ```bash
-$ build_ucs.py -i <ip> -u <user> -p <password> -c <json config file>
+build_ucs.py -i <ip> -u <user> -p <password> -c <json config file>
 $ build_ucs.py -i 192.168.10.10 -u admin -p cisco123 -c ucs_config-2xESX.json 
-$ remove_ucs.py -i <ip> -u <user> -p <password> -r <previous generated remove file>
+```
+#### To remove:
+remove_ucs.py -i <ip> -u <user> -p <password> -r <previous generated remove file>
+```bash
 $ remove_ucs.py -i 192.168.10.10 -u admin -p cisco123 -r remove_script_with_timestamp
+```
