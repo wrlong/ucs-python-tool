@@ -2,6 +2,7 @@
 
 import simplejson as json
 import getopt
+import sys
 from UcsSdk import *
 from modules.fabric import vlan
 from modules.pool import mac_pool
@@ -249,7 +250,10 @@ if __name__ == '__main__':
             "org-root/ls-"+spt,
             "LsServer")
 
-        handle.CompleteTransaction()
+        try:
+            handle.CompleteTransaction()
+        except TransactionError:
+            print("Error: Error while attempting to complete transaction.")
         handle.StartTransaction()
 
         # Create Service Profile instances

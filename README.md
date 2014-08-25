@@ -6,7 +6,7 @@ A simple UCS configuration tool that uses the UCS Python SDK for UCSM API integr
 It modularizes key functions for the UCS Python SDK, supporting configuration via a JSON structured configuration file for simplified manipulation. 
  
 ### Important source files
-- build_ucs.py - Main file to build UCS environment;  requires ucs_config.py; auto-generates a time stamped remove script.
+- build_ucs.py - Main file to build UCS environment; auto-generates a time stamped remove script.
 - ucs_config<>.json - JSON configuraiton file required for build_ucs.py; Uses JSON format specifying UCSM constructs such as pools policies and templates.
 - remove_ucs.py - Takes a previously auto-generated time-stamped removal script to remove all configuration completed by a previous build_ucs.py run.
 
